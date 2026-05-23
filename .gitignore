@@ -1,0 +1,34 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local environment files
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# PHP / Composer
+/vendor/
+composer.lock
+
+# XAMPP / local runtime artifacts
+xampp/
+
+# Database dumps
+*.sql.gz
+*.sql.bz2
+*.sql.zip
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
