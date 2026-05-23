@@ -5,18 +5,37 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 $user_id = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT r.*, t.name as tool_name, t.image_path FROM rentals r 
+$stmt = $pdo->prepare("SELECT r.*, t.name as tool_name, t.image_path,
+                              (SELECT COUNT(*) FROM reviews rev WHERE rev.tool_id = r.tool_id AND rev.user_id = r.user_id) as review_count
+                       FROM rentals r 
                        JOIN tools t ON r.tool_id = t.id 
                        WHERE r.user_id = ? 
                        ORDER BY r.created_at DESC");
 $stmt->execute([$user_id]);
 $rentals = $stmt->fetchAll();
+
+$hasUnreviewedCompletedRentals = false;
+foreach ($rentals as $r) {
+    if ($r['status'] === 'completed' && $r['review_count'] == 0) {
+        $hasUnreviewedCompletedRentals = true;
+        break;
+    }
+}
 ?>
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="fw-bold m-0">My Rental History</h2>
         <a href="catalogue.php" class="btn btn-outline-secondary rounded-pill btn-sm">Rent More</a>
     </div>
+    
+    <?php if ($hasUnreviewedCompletedRentals): ?>
+        <div class="alert alert-success d-flex align-items-center shadow-sm rounded-4 mb-4" role="alert">
+            <i class="fas fa-check-circle fa-2x me-3"></i>
+            <div>
+                <strong>Item Received!</strong> Thank you for returning your equipment. Please take a moment to leave a review for your completed rentals below.
+            </div>
+        </div>
+    <?php endif; ?>
     <?php if (empty($rentals)): ?>
         <div class="text-center py-5 bg-white rounded-4 shadow-sm">
             <i class="fas fa-history fa-4x text-light mb-3"></i>
@@ -45,13 +64,26 @@ $rentals = $stmt->fetchAll();
                                 <div class="small fw-bold">
                                     <?php echo date('M d', strtotime($r['start_date'])); ?> - <?php echo date('M d', strtotime($r['end_date'])); ?>
                                 </div>
-                                <div class="badge bg-light text-dark mt-2"><?php echo ucfirst($r['status']); ?></div>
+                                <?php 
+                                $badgeClass = 'bg-secondary text-white';
+                                if ($r['status'] === 'pending') $badgeClass = 'bg-warning text-dark';
+                                if ($r['status'] === 'confirmed') $badgeClass = 'bg-primary text-white';
+                                if ($r['status'] === 'completed') $badgeClass = 'bg-success text-white';
+                                if ($r['status'] === 'cancelled') $badgeClass = 'bg-danger text-white';
+                                ?>
+                                <div class="badge <?php echo $badgeClass; ?> mt-2"><?php echo ucfirst($r['status']); ?></div>
                             </div>
                             <div class="col-md-3 p-4 text-center">
                                 <div class="h5 fw-bold mb-3">$<?php echo h($r['total_cost']); ?></div>
-                                <a href="tool-detail.php?id=<?php echo $r['tool_id']; ?>#reviewModal" class="btn btn-secondary btn-sm rounded-pill px-4">
-                                    Leave Review
-                                </a>
+                                <?php if ($r['status'] === 'completed'): ?>
+                                    <a href="tool-detail.php?id=<?php echo $r['tool_id']; ?>#reviewModal" class="btn btn-secondary btn-sm rounded-pill px-4">
+                                        Leave Review
+                                    </a>
+                                <?php else: ?>
+                                    <button class="btn btn-light btn-sm rounded-pill px-4" disabled title="Available after item is returned">
+                                        Pending Return
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>

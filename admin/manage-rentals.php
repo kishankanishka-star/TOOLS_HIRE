@@ -6,6 +6,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit;
 }
+$pendingReviews = $pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn();
 if (isset($_GET['id']) && isset($_GET['status'])) {
     $id = $_GET['id'];
     $status = $_GET['status'];
@@ -21,7 +22,8 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
         $stmt = $pdo->prepare("UPDATE tools SET availability_status = ? WHERE id = ?");
         $stmt->execute([$tool_status, $tool_id]);
         $pdo->commit();
-        header('Location: manage-rentals.php?msg=Rental status and tool availability updated.');
+        $msg = $status === 'completed' ? 'Item marked as received and rental completed.' : 'Rental status updated.';
+        header('Location: manage-rentals.php?msg=' . urlencode($msg));
     } catch (Exception $e) {
         $pdo->rollBack();
         die("Error: " . $e->getMessage());
@@ -52,8 +54,12 @@ $rentals = $pdo->query("SELECT r.*, t.name as tool_name, u.username
             </div>
             <a href="dashboard.php" class="admin-nav-link"><i class="fas fa-home me-2"></i> Dashboard</a>
             <a href="manage-tools.php" class="admin-nav-link"><i class="fas fa-tools me-2"></i> Manage Tools</a>
-            <a href="manage-rentals.php" class="admin-nav-link active"><i class="fas fa-receipt me-2"></i> Rentals</a>
-            <a href="moderate-reviews.php" class="admin-nav-link"><i class="fas fa-comments me-2"></i> Reviews</a>
+            <a href="manage-rentals.php" class="admin-nav-link active"><i class="fas fa-receipt me-2"></i> Manage Rentals</a>
+            <a href="moderate-reviews.php" class="admin-nav-link"><i class="fas fa-comments me-2"></i> Reviews 
+                <?php if ($pendingReviews > 0): ?>
+                    <span class="badge bg-danger ms-2"><?php echo $pendingReviews; ?></span>
+                <?php endif; ?>
+            </a>
             <div class="mt-auto p-4">
                 <a href="../logout.php" class="btn btn-outline-light btn-sm w-100">Logout</a>
             </div>
@@ -101,13 +107,18 @@ $rentals = $pdo->query("SELECT r.*, t.name as tool_name, u.username
                                     <span class="badge <?php echo $badgeClass; ?>"><?php echo ucfirst($r['status']); ?></span>
                                 </td>
                                 <td>
+                                    <?php if ($r['status'] === 'confirmed'): ?>
+                                        <a href="?id=<?php echo $r['id']; ?>&status=completed" class="btn btn-success btn-sm rounded-pill px-3 mb-1 w-100 fw-bold">
+                                            <i class="fas fa-check me-1"></i> Receive Item
+                                        </a>
+                                    <?php endif; ?>
                                     <div class="dropdown">
-                                        <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                            Update
+                                        <button class="btn btn-light btn-sm rounded-pill px-3 dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                            Update Status
                                         </button>
                                         <ul class="dropdown-menu border-0 shadow rounded-3">
                                             <li><a class="dropdown-item" href="?id=<?php echo $r['id']; ?>&status=confirmed">Confirm</a></li>
-                                            <li><a class="dropdown-item" href="?id=<?php echo $r['id']; ?>&status=completed">Complete</a></li>
+                                            <li><a class="dropdown-item text-success" href="?id=<?php echo $r['id']; ?>&status=completed">Mark Received</a></li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li><a class="dropdown-item text-danger" href="?id=<?php echo $r['id']; ?>&status=cancelled">Cancel</a></li>
                                         </ul>

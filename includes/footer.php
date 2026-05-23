@@ -11,7 +11,8 @@
                 <ul class="list-unstyled small">
                     <li><a href="index.php" class="text-muted text-decoration-none">Home</a></li>
                     <li><a href="catalogue.php" class="text-muted text-decoration-none">Catalogue</a></li>
-                    <li><a href="#" class="text-muted text-decoration-none">Contact Us</a></li>
+                    <li><a href="docs/USER_MANUAL.doc" class="text-muted text-decoration-none" download><i class="fas fa-file-word me-1"></i> User Manual (DOC)</a></li>
+                    <li><a href="docs/USER_MANUAL.md" class="text-muted text-decoration-none" download><i class="fas fa-file-alt me-1"></i> User Manual (Markdown)</a></li>
                 </ul>
             </div>
             <div class="col-md-3 mb-4">

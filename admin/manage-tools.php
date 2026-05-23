@@ -6,6 +6,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit;
 }
+$pendingReviews = $pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn();
 if (isset($_GET['delete'])) {
     $stmt = $pdo->prepare("DELETE FROM tools WHERE id = ?");
     $stmt->execute([$_GET['delete']]);
@@ -22,13 +23,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $w_price = $_POST['weekly_price'];
     $status = $_POST['availability_status'];
     $featured = isset($_POST['featured']) ? 1 : 0;
+
+    $image_path = null;
+    if (isset($_FILES['tool_image']) && $_FILES['tool_image']['error'] == UPLOAD_ERR_OK) {
+        $uploadDir = '../assets/images/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+        $fileName = time() . '_' . basename($_FILES['tool_image']['name']);
+        $targetPath = $uploadDir . $fileName;
+        if (move_uploaded_file($_FILES['tool_image']['tmp_name'], $targetPath)) {
+            $image_path = $fileName;
+        }
+    }
+
     if ($id) {
-        $stmt = $pdo->prepare("UPDATE tools SET name=?, category_id=?, description=?, hourly_price=?, daily_price=?, weekly_price=?, availability_status=?, featured=? WHERE id=?");
-        $stmt->execute([$name, $category_id, $description, $h_price, $d_price, $w_price, $status, $featured, $id]);
+        if ($image_path) {
+            $stmt = $pdo->prepare("UPDATE tools SET name=?, category_id=?, description=?, hourly_price=?, daily_price=?, weekly_price=?, availability_status=?, featured=?, image_path=? WHERE id=?");
+            $stmt->execute([$name, $category_id, $description, $h_price, $d_price, $w_price, $status, $featured, $image_path, $id]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE tools SET name=?, category_id=?, description=?, hourly_price=?, daily_price=?, weekly_price=?, availability_status=?, featured=? WHERE id=?");
+            $stmt->execute([$name, $category_id, $description, $h_price, $d_price, $w_price, $status, $featured, $id]);
+        }
+        
+        // If the admin manually sets the tool back to 'Available', automatically complete any active rentals
+        if ($status === 'Available') {
+            $stmt = $pdo->prepare("UPDATE rentals SET status = 'completed' WHERE tool_id = ? AND status = 'confirmed'");
+            $stmt->execute([$id]);
+        }
+
         $msg = "Tool updated.";
     } else {
-        $stmt = $pdo->prepare("INSERT INTO tools (name, category_id, description, hourly_price, daily_price, weekly_price, availability_status, featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $category_id, $description, $h_price, $d_price, $w_price, $status, $featured]);
+        $stmt = $pdo->prepare("INSERT INTO tools (name, category_id, description, hourly_price, daily_price, weekly_price, availability_status, featured, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $category_id, $description, $h_price, $d_price, $w_price, $status, $featured, $image_path]);
         $msg = "Tool added.";
     }
     header("Location: manage-tools.php?msg=$msg");
@@ -61,7 +88,12 @@ if (isset($_GET['edit'])) {
             </div>
             <a href="dashboard.php" class="admin-nav-link"><i class="fas fa-home me-2"></i> Dashboard</a>
             <a href="manage-tools.php" class="admin-nav-link active"><i class="fas fa-tools me-2"></i> Manage Tools</a>
-            <a href="moderate-reviews.php" class="admin-nav-link"><i class="fas fa-comments me-2"></i> Reviews</a>
+            <a href="manage-rentals.php" class="admin-nav-link"><i class="fas fa-receipt me-2"></i> Manage Rentals</a>
+            <a href="moderate-reviews.php" class="admin-nav-link"><i class="fas fa-comments me-2"></i> Reviews 
+                <?php if ($pendingReviews > 0): ?>
+                    <span class="badge bg-danger ms-2"><?php echo $pendingReviews; ?></span>
+                <?php endif; ?>
+            </a>
             <div class="mt-auto p-4">
                 <a href="../logout.php" class="btn btn-outline-light btn-sm w-100">Logout</a>
             </div>
@@ -80,7 +112,7 @@ if (isset($_GET['edit'])) {
             <!-- Form (Add/Edit) -->
             <div class="collapse <?php echo $editTool ? 'show' : ''; ?> mb-5" id="toolForm">
                 <div class="card border-0 shadow-sm rounded-4">
-                    <form method="POST" class="card-body p-4">
+                    <form method="POST" class="card-body p-4" enctype="multipart/form-data">
                         <?php if ($editTool): ?>
                             <input type="hidden" name="id" value="<?php echo $editTool['id']; ?>">
                         <?php endif; ?>
@@ -123,8 +155,17 @@ if (isset($_GET['edit'])) {
                                     <option value="Maintenance" <?php echo (isset($editTool['availability_status']) && $editTool['availability_status'] == 'Maintenance') ? 'selected' : ''; ?>>Maintenance</option>
                                 </select>
                             </div>
-                            <div class="col-12">
-                                <div class="form-check form-switch">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Tool Image (Optional)</label>
+                                <input type="file" name="tool_image" class="form-control" accept="image/*">
+                                <?php if (isset($editTool) && $editTool['image_path']): ?>
+                                    <div class="mt-2 small text-muted">
+                                        Current Image: <img src="../assets/images/<?php echo h($editTool['image_path']); ?>" alt="Tool" style="height: 30px; object-fit: cover;" class="ms-2 rounded">
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center">
+                                <div class="form-check form-switch mt-4">
                                     <input class="form-check-input" type="checkbox" name="featured" id="featSwitch" <?php echo (isset($editTool['featured']) && $editTool['featured']) ? 'checked' : ''; ?>>
                                     <label class="form-check-label small fw-bold" for="featSwitch">Show in Featured Section on Homepage</label>
                                 </div>

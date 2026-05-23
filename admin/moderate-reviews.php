@@ -6,6 +6,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit;
 }
+$pendingReviews = $pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'pending'")->fetchColumn();
 if (isset($_GET['id']) && isset($_GET['action'])) {
     $id = $_GET['id'];
     $action = $_GET['action'];
@@ -41,7 +42,12 @@ $reviews = $pdo->query("SELECT r.*, t.name as tool_name, u.username
             </div>
             <a href="dashboard.php" class="admin-nav-link"><i class="fas fa-home me-2"></i> Dashboard</a>
             <a href="manage-tools.php" class="admin-nav-link"><i class="fas fa-tools me-2"></i> Manage Tools</a>
-            <a href="moderate-reviews.php" class="admin-nav-link active"><i class="fas fa-comments me-2"></i> Reviews</a>
+            <a href="manage-rentals.php" class="admin-nav-link"><i class="fas fa-receipt me-2"></i> Manage Rentals</a>
+            <a href="moderate-reviews.php" class="admin-nav-link active"><i class="fas fa-comments me-2"></i> Reviews 
+                <?php if ($pendingReviews > 0): ?>
+                    <span class="badge bg-danger ms-2"><?php echo $pendingReviews; ?></span>
+                <?php endif; ?>
+            </a>
             <div class="mt-auto p-4">
                 <a href="../logout.php" class="btn btn-outline-light btn-sm w-100">Logout</a>
             </div>

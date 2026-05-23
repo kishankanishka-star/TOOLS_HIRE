@@ -62,32 +62,40 @@ $reviews = $pdo->query("SELECT r.*, t.name as tool_name, u.username
             <!-- Stats -->
             <div class="row mb-5">
                 <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="small text-muted mb-2">Total Inventory</div>
-                        <div class="h3 fw-bold m-0"><?php echo $totalTools; ?></div>
-                        <div class="small text-muted mt-2">Active listings</div>
-                    </div>
+                    <a href="manage-tools.php" class="text-decoration-none text-dark">
+                        <div class="stat-card">
+                            <div class="small text-muted mb-2">Total Inventory</div>
+                            <div class="h3 fw-bold m-0"><?php echo $totalTools; ?></div>
+                            <div class="small text-muted mt-2">Active listings</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="small text-muted mb-2">Total Rentals</div>
-                        <div class="h3 fw-bold m-0 text-primary"><?php echo $totalRentals; ?></div>
-                        <div class="small text-success mt-2"><i class="fas fa-check-circle"></i> <?php echo $activeRentals; ?> active hires</div>
-                    </div>
+                    <a href="manage-rentals.php" class="text-decoration-none text-dark">
+                        <div class="stat-card">
+                            <div class="small text-muted mb-2">Total Rentals</div>
+                            <div class="h3 fw-bold m-0 text-primary"><?php echo $totalRentals; ?></div>
+                            <div class="small text-success mt-2"><i class="fas fa-check-circle"></i> <?php echo $activeRentals; ?> active hires</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="small text-muted mb-2">Avg. Tool Rating</div>
-                        <div class="h3 fw-bold m-0"><?php echo number_format($avgRating, 1); ?> <i class="fas fa-star text-warning small"></i></div>
-                        <div class="small text-muted mt-2">Based on <?php echo $approvedReviews; ?> reviews</div>
-                    </div>
+                    <a href="moderate-reviews.php" class="text-decoration-none text-dark">
+                        <div class="stat-card">
+                            <div class="small text-muted mb-2">Avg. Tool Rating</div>
+                            <div class="h3 fw-bold m-0"><?php echo number_format($avgRating, 1); ?> <i class="fas fa-star text-warning small"></i></div>
+                            <div class="small text-muted mt-2">Based on <?php echo $approvedReviews; ?> reviews</div>
+                        </div>
+                    </a>
                 </div>
                 <div class="col-md-3">
-                    <div class="stat-card">
-                        <div class="small text-muted mb-2">Pending Reviews</div>
-                        <div class="h3 fw-bold m-0 text-warning"><?php echo $pendingReviews; ?></div>
-                        <div class="small text-muted mt-2">Requires moderation</div>
-                    </div>
+                    <a href="moderate-reviews.php" class="text-decoration-none text-dark">
+                        <div class="stat-card">
+                            <div class="small text-muted mb-2">Pending Reviews</div>
+                            <div class="h3 fw-bold m-0 text-warning"><?php echo $pendingReviews; ?></div>
+                            <div class="small text-muted mt-2">Requires moderation</div>
+                        </div>
+                    </a>
                 </div>
             </div>
             <!-- Recent Activity -->
